@@ -1,7 +1,7 @@
 import os
 from h5py import File
 from tqdm import tqdm
-from models import TWEETNET
+from models import *
 from keras.utils import to_categorical as one_hot
 from argparse import ArgumentParser
 from time import clock
@@ -26,8 +26,9 @@ train_x = [x[0] for x in training]
 train_y = np.asarray([x[1] for x in training])
 
 # only work with the 3000 most popular words found in our dataset
-max_words = 3000
-
+max_words = 4000
+# number of classes
+num_labels = 3
 # create a new Tokenizer
 tokenizer = Tokenizer(num_words=max_words)
 # feed our tweets to the Tokenizer
@@ -58,19 +59,21 @@ allWordIndices = np.asarray(allWordIndices)
 # create one-hot matrices out of the indexed tweets
 train_x = tokenizer.sequences_to_matrix(allWordIndices, mode='binary')
 # treat the labels as categories
-train_y = keras.utils.to_categorical(train_y, 3)
+train_y = keras.utils.to_categorical(train_y, num_labels)
 
 #================================================================
 #======================== TRAIN NETWORK =========================
 #================================================================
 
-model = TWEETNET()
+#model = TWEETNET(max_words, num_labels)
+#model = BESTNET(max_words, num_labels)
+model = TWEETCONV(max_words, num_labels)
 
 model.fit(train_x, train_y,
   batch_size=32,
-  epochs=5,
+  epochs=10,
   verbose=1,
-  validation_split=0.1,
+  validation_split=0.2,
   shuffle=True)
 
 #================================================================
@@ -78,7 +81,7 @@ model.fit(train_x, train_y,
 #================================================================
 
 model_json = model.to_json()
-with open('model.json', 'w') as json_file:
+with open('/home/julian_cuevas1/tweetnet/models/model.json', 'w') as json_file:
     json_file.write(model_json)
 
-model.save_weights('model.h5')
+model.save_weights('/home/julian_cuevas1/tweetnet/models/model.h5')
