@@ -6,9 +6,9 @@ from keras.preprocessing.text import Tokenizer
 from keras.models import model_from_json
 
 # we're still going to use a Tokenizer here, but we don't need to fit it
-tokenizer = Tokenizer(num_words=3000)
+tokenizer = Tokenizer(num_words=1000)
 # for human-friendly printing
-labels = ['negative', 'positive']
+labels = ['No', 'Yes', 'Ambiguous']
 
 # read in our saved dictionary
 with open('dictionary.json', 'r') as dictionary_file:
@@ -28,17 +28,20 @@ def convert_text_to_index_array(text):
     return wordIndices
 
 # read in your saved model structure
-json_file = open('model.json', 'r')
+json_file = open('/home/julian_cuevas1/tweetnet/models/model.json', 'r')
 loaded_model_json = json_file.read()
 json_file.close()
 # and create a model from that
 model = model_from_json(loaded_model_json)
 # and weight your nodes with your saved values
-model.load_weights('model.h5')
+model.load_weights('/home/julian_cuevas1/tweetnet/models/model.h5')
 
+
+
+'''
 # okay here's the interactive part
 while 1:
-    evalSentence = raw_input('Input a sentence to be evaluated, or Enter to quit: ')
+    evalSentence = input('Input a sentence to be evaluated, or Enter to quit: ')
 
     if len(evalSentence) == 0:
         break
@@ -49,4 +52,5 @@ while 1:
     # predict which bucket your input belongs in
     pred = model.predict(input)
     # and print it for the humons
-    print("%s sentiment; %f%% confidence" % (labels[np.argmax(pred)], pred[0][np.argmax(pred)] * 100))
+    print("Talks about a medical condition: %s; %f%% confidence" % (labels[np.argmax(pred)], pred[0][np.argmax(pred)] * 100))
+'''

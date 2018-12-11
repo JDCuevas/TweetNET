@@ -12,78 +12,87 @@ import json
 import keras
 import keras.preprocessing.text as kpt
 from keras.preprocessing.text import Tokenizer
+from argparse import ArgumentParser
 
-#=================================================================
-#======================== PREPARING DATA =========================
-#=================================================================
 
-# Extract data from a csv
-training = np.genfromtxt('/home/julian_cuevas1/data/training/cleantextlabels7.csv', delimiter=',', usecols=(0, 1), dtype=None)
+if __name__ == '__main__':
+    parser = ArgumentParser(description = "Capsule network on protein volumetric data.")
+    parser.add_argument('--model', default = 'TWEETNET')
 
-# create our training data from the tweets
-train_x = [x[0] for x in training]
-# index all the classification labels
-train_y = np.asarray([x[1] for x in training])
+    args = parser.parse_args()
+    #=================================================================
+    #======================== PREPARING DATA =========================
+    #=================================================================
 
-# only work with the 3000 most popular words found in our dataset
-max_words = 1000
-# number of classes
-num_labels = 3
-# create a new Tokenizer
-tokenizer = Tokenizer(num_words=max_words)
-# feed our tweets to the Tokenizer
-tokenizer.fit_on_texts(train_x)
+    # Extract data from a csv
+    training = np.genfromtxt('/home/julian_cuevas1/data/training/cleantextlabels7.csv', delimiter=',', usecols=(0, 1), dtype=None)
 
-# Tokenizers come with a convenient list of words and IDs
-dictionary = tokenizer.word_index
-# Let's save this out so we can use it later
-with open('dictionary.json', 'w') as dictionary_file:
-    json.dump(dictionary, dictionary_file)
+    # create our training data from the tweets
+    train_x = [x[0] for x in training]
+    # index all the classification labels
+    train_y = np.asarray([x[1] for x in training])
 
-def convert_text_to_index_array(text):
-    # one really important thing that `text_to_word_sequence` does
-    # is make all texts the same length -- in this case, the length
-    # of the longest text in the set.
-    return [dictionary[word] for word in kpt.text_to_word_sequence(text)]
+    # only work with the 3000 most popular words found in our dataset
+    max_words = 1000
+    # number of classes
+    num_labels = 3
+    # create a new Tokenizer
+    tokenizer = Tokenizer(num_words=max_words)
+    # feed our tweets to the Tokenizer
+    tokenizer.fit_on_texts(train_x)
 
-allWordIndices = []
-# for each tweet, change each token to its ID in the Tokenizer's word_index
-for text in train_x:
-    wordIndices = convert_text_to_index_array(text)
-    allWordIndices.append(wordIndices)
+    # Tokenizers come with a convenient list of words and IDs
+    dictionary = tokenizer.word_index
+    # Let's save this out so we can use it later
+    with open('dictionary.json', 'w') as dictionary_file:
+        json.dump(dictionary, dictionary_file)
 
-# now we have a list of all tweets converted to index arrays.
-# cast as an array for future usage.
-allWordIndices = np.asarray(allWordIndices)
+    def convert_text_to_index_array(text):
+        # one really important thing that `text_to_word_sequence` does
+        # is make all texts the same length -- in this case, the length
+        # of the longest text in the set.
+        return [dictionary[word] for word in kpt.text_to_word_sequence(text)]
 
-# create one-hot matrices out of the indexed tweets
-train_x = tokenizer.sequences_to_matrix(allWordIndices, mode='binary')
-# treat the labels as categories
-train_y = keras.utils.to_categorical(train_y, num_labels)
+    allWordIndices = []
+    # for each tweet, change each token to its ID in the Tokenizer's word_index
+    for text in train_x:
+        wordIndices = convert_text_to_index_array(text)
+        allWordIndices.append(wordIndices)
 
-#================================================================
-#======================== TRAIN NETWORK =========================
-#================================================================
+    # now we have a list of all tweets converted to index arrays.
+    # cast as an array for future usage.
+    allWordIndices = np.asarray(allWordIndices)
 
-#model = TWEETNET(max_words, num_labels)
-#model = BESTNET(max_words, num_labels)
+    # create one-hot matrices out of the indexed tweets
+    train_x = tokenizer.sequences_to_matrix(allWordIndices, mode='binary')
+    # treat the labels as categories
+    train_y = keras.utils.to_categorical(train_y, num_labels)
 
-train_x = np.expand_dims(train_x, axis=2)
-model = TWEETCONV(max_words, num_labels)
+    #================================================================
+    #======================== TRAIN NETWORK =========================
+    #================================================================
+    
+    if args.model == 'TWEETNET':
+        model = TWEETNET(max_words, num_labels)
+        #model = BESTNET(max_words, num_labels)
+    
+    if args.model == 'TWEETCONV':
+        train_x = np.expand_dims(train_x, axis=2)
+        model = TWEETCONV(max_words, num_labels)
 
-model.fit(train_x, train_y,
-  batch_size=32,
-  epochs=10,
-  verbose=1,
-  validation_split=0.2,
-  shuffle=True)
+    model.fit(train_x, train_y,
+      batch_size=32,
+      epochs=10,
+      verbose=1,
+      validation_split=0.2,
+      shuffle=True)
 
-#================================================================
-#======================== SAVE MODEL =========================
-#================================================================
+    #================================================================
+    #======================== SAVE MODEL =========================
+    #================================================================
 
-model_json = model.to_json()
-with open('/home/julian_cuevas1/tweetnet/models/model.json', 'w') as json_file:
-    json_file.write(model_json)
+    model_json = model.to_json()
+    with open('/home/julian_cuevas1/tweetnet/models/model_' + args.model + '.json', 'w') as json_file:
+        json_file.write(model_json)
 
-model.save_weights('/home/julian_cuevas1/tweetnet/models/model.h5')
+    model.save_weights('/home/julian_cuevas1/tweetnet/models/model_' + args.model + '.h5')
