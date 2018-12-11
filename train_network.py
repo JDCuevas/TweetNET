@@ -18,7 +18,7 @@ from keras.preprocessing.text import Tokenizer
 #=================================================================
 
 # Extract data from a csv
-training = np.genfromtxt('/home/julian_cuevas1/data/cleantextlabels7.csv', delimiter=',', usecols=(0, 1), dtype=None)
+training = np.genfromtxt('/home/julian_cuevas1/data/training/cleantextlabels7.csv', delimiter=',', usecols=(0, 1), dtype=None)
 
 # create our training data from the tweets
 train_x = [x[0] for x in training]
@@ -26,7 +26,7 @@ train_x = [x[0] for x in training]
 train_y = np.asarray([x[1] for x in training])
 
 # only work with the 3000 most popular words found in our dataset
-max_words = 4000
+max_words = 1000
 # number of classes
 num_labels = 3
 # create a new Tokenizer
@@ -67,6 +67,8 @@ train_y = keras.utils.to_categorical(train_y, num_labels)
 
 #model = TWEETNET(max_words, num_labels)
 #model = BESTNET(max_words, num_labels)
+
+train_x = np.expand_dims(train_x, axis=2)
 model = TWEETCONV(max_words, num_labels)
 
 model.fit(train_x, train_y,
